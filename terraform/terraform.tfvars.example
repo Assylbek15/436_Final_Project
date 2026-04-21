@@ -1,0 +1,12 @@
+# Copy this to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit it.
+
+resource_group_name    = "doc-inspector-rg"
+location               = "westus2"
+project_name           = "docinspector"
+acr_sku                = "Basic"
+aks_node_count         = 1
+# Start with a smaller burstable node before trying larger D-series sizes.
+aks_node_size          = "Standard_B2s_v2"
+storage_account_name   = "docinspectorsa"
+storage_container_name = "documents"

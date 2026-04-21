@@ -1,0 +1,29 @@
+# Environment secrets
+.env
+
+# macOS
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+env/
+
+# Build / dist
+dist/
+build/
+
+# Logs
+*.log
+
+# Model weights
+models/*.pt
+models/**/*.pt
+
+# Static outputs
+static/annotated/
