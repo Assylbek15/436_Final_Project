@@ -1,74 +1,147 @@
-# 🚀 Digital Document Inspector - Deployment Guide
+# Digital Document Inspector
 
-This repository contains the full source code for the Digital Document Inspector.
-If you plan to run it directly from GitHub, ensure you first download
-the required **model files** from the **GitHub Releases** section and
-place them in the expected directories.
+Digital Document Inspector is a cloud-deployed document analysis system for scanned PDFs and images. It uses custom YOLO models to detect QR codes and signatures or stamps, exposes the analysis through a FastAPI backend, and provides a React frontend for upload and result viewing.
 
-For most users---and especially during a hackathon---the **simplest and
-most reliable** way to run the system is via **Docker containers**,
-preferably on a **macOS (ARM64) machine**, where the images run
-natively.
+The current production-oriented setup is:
 
+- detection: local YOLO models in the backend
+- storage: Azure Blob Storage for annotated outputs
+- hosting: Azure Kubernetes Service (AKS)
+- infrastructure: Terraform
+- CI/CD: GitHub Actions
 
-------------------------------------------------------------------------
+## Features
 
-## 📦 Run via Docker
+- Upload a PDF or image and analyze it through a web UI
+- Run custom YOLO inference on document pages
+- Support both single-document and batch ZIP workflows
+- Generate annotated page images and an annotated PDF
+- Store output artifacts in Azure Blob Storage
+- Deploy the stack with Docker, Kubernetes, and Terraform
 
-Both the frontend and backend are published as versioned Docker images.
-No local Python, Node, or dependency setup is required.
+## Tech Stack
 
-### **Frontend**
+- Frontend: React, TypeScript, Vite
+- Backend: FastAPI, Uvicorn, Python 3.10
+- Detection: Ultralytics YOLOv8, PyTorch
+- PDF rendering: PyMuPDF
+- Cloud: Azure AKS, ACR, Blob Storage
+- IaC: Terraform
+- CI/CD: GitHub Actions
 
-    docker pull alisherkenzhegaliev/innovatex-frontend:v2
-    docker run -p 3000:80 alisherkenzhegaliev/innovatex-frontend:v2
+## Repository Structure
 
-Access at: http://localhost:3000
+```text
+backend/      FastAPI app, YOLO models, Dockerfile
+frontend/     React/Vite app, Dockerfile
+k8s/          Kubernetes manifests
+terraform/    Azure infrastructure
+.github/      GitHub Actions workflow
+SETUP.md      Detailed setup instructions
+ARCHITECTURE.md  System architecture and design
+DEMO_RUNBOOK.md  Pre-demo and recovery commands
+```
 
-------------------------------------------------------------------------
+## Detection Providers
 
-### **Backend**
+The backend supports three modes through `DETECTION_PROVIDER`:
 
-    docker pull alisherkenzhegaliev/innovatex-backend:v2
-    docker run -p 8000:8000 alisherkenzhegaliev/innovatex-backend:v2
+- `yolo`: force local YOLO models
+- `azure`: force Azure Document Intelligence
+- `auto`: use Azure only if credentials are present, otherwise fall back to YOLO
 
-Backend API: http://localhost:8000
+For the current cloud deployment, the intended mode is `yolo`.
 
-------------------------------------------------------------------------
+## Quick Start
 
-## 🧱 Optional: Run From Source (Requires Models)
+### Option 1: Docker Compose
 
-If running the application directly from GitHub instead of Docker:
+```powershell
+docker compose up --build
+```
 
-1.  Clone the repo.
-2.  Download the required **YOLO/model weights** from GitHub Releases →
-    Assets.
-3.  Place model files in the correct paths as described in the code.
-4.  Install dependencies manually.
-5.  Start backend + frontend services.
+Then open:
 
-This method is supported, but less convenient than using the containers.
+- frontend: `http://localhost:3000`
+- backend docs: `http://localhost:8000/docs`
 
-------------------------------------------------------------------------
+### Option 2: Run From Source
 
-## 🧩 Architecture Overview
+1. Clone the repository.
+2. Pull the Git LFS model files:
 
--   Frontend and backend are deployed as **independent containers**.
--   No shared state; everything communicates through exposed ports.
--   Containers are reproducible and portable across environments.
--   Docker Hub is used as the distribution registry.
+```powershell
+git lfs pull
+```
 
-------------------------------------------------------------------------
+3. Start the backend:
 
-## 📝 Notes
+```powershell
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
 
--   macOS systems provide the smoothest experience because the images
-    are built natively for ARM64.
--   If running on Windows x86, ensure the image supports
-    multi-architecture or use macOS for best compatibility.
--   `docker compose` can orchestrate both containers if needed.
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
+4. Start the frontend in a second terminal:
 
-------------------------------------------------------------------------
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+## Required Environment Variables
+
+Backend configuration is loaded from `backend/.env` locally or from Kubernetes secrets in the cloud.
+
+Common variables:
+
+```env
+DETECTION_PROVIDER=yolo
+AZURE_DI_ENDPOINT=
+AZURE_DI_KEY=
+AZURE_STORAGE_CONNECTION_STRING=<storage-connection-string>
+AZURE_STORAGE_CONTAINER=documents
+```
+
+## Cloud Deployment Summary
+
+The Azure deployment consists of:
+
+- ACR for container images
+- AKS for frontend/backend workloads
+- Blob Storage for result persistence
+- GitHub Actions for build and deploy automation
+
+Core deployment flow:
+
+1. Terraform provisions Azure resources
+2. Docker images are built and pushed to ACR
+3. Kubernetes manifests are applied to AKS
+4. The ingress exposes the frontend and backend publicly
+5. The backend uploads annotated outputs to Blob Storage
+
+For the full procedure, use [SETUP.md](C:/Users/assyl/Digital-Document-Inspector/SETUP.md:1).
+
+## Demo / Live Presentation
+
+If you are presenting the hosted AKS version, use [DEMO_RUNBOOK.md](C:/Users/assyl/Digital-Document-Inspector/DEMO_RUNBOOK.md:1) before the demo. It includes:
+
+- pre-demo health checks
+- commands to verify YOLO mode
+- recovery steps if the backend crashes
+- safe doc-only push commands using `[skip ci]`
+
+## Additional Documentation
+
+- Setup: [SETUP.md](C:/Users/assyl/Digital-Document-Inspector/SETUP.md:1)
+- Architecture: [ARCHITECTURE.md](C:/Users/assyl/Digital-Document-Inspector/ARCHITECTURE.md:1)
+- Demo operations: [DEMO_RUNBOOK.md](C:/Users/assyl/Digital-Document-Inspector/DEMO_RUNBOOK.md:1)
+
+## Notes
+
+- The YOLO model files are tracked with Git LFS.
+- Blob Storage is used for generated artifacts, not for static website hosting.
+- Pushing to `main` triggers the GitHub Actions deployment workflow unless you use `[skip ci]`.
