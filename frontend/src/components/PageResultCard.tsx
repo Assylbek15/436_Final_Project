@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
 import type { PageResult } from "../types/types";
+import { resolveAssetUrl } from "../utils/assetUrl";
 
 interface PageResultCardProps {
   page: PageResult;
@@ -34,7 +35,7 @@ export default function PageResultCard({ page, index }: PageResultCardProps) {
           </h4>
           <div className="bg-gray-950 rounded-lg p-4 border border-gray-800">
             <img
-              src={`http://localhost:8000${page.annotated_image_url}`}
+              src={resolveAssetUrl(page.annotated_image_url)}
               alt={`Page ${page.page_index} annotations`}
               className="w-full h-auto rounded"
             />

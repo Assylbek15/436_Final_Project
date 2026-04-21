@@ -4,7 +4,12 @@ metadata:
   name: frontend
   namespace: doc-inspector
 spec:
-  replicas: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: frontend
@@ -16,6 +21,7 @@ spec:
       containers:
         - name: frontend
           image: docinspectoracr.azurecr.io/frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:

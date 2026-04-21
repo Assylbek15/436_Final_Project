@@ -4,28 +4,23 @@ metadata:
   name: doc-inspector-ingress
   namespace: doc-inspector
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
 spec:
-  ingressClassName: nginx
+  ingressClassName: webapprouting.kubernetes.azure.com
   rules:
     - http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
           - path: /analyze
-            pathType: Prefix
+            pathType: Exact
             backend:
               service:
                 name: backend
                 port:
                   number: 8000
           - path: /batch-analyze
-            pathType: Prefix
+            pathType: Exact
             backend:
               service:
                 name: backend
@@ -38,3 +33,10 @@ spec:
                 name: backend
                 port:
                   number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

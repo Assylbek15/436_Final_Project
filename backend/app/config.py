@@ -9,6 +9,7 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 # Azure AI Document Intelligence
 # ---------------------------------------------------------------------------
+DETECTION_PROVIDER = os.environ.get("DETECTION_PROVIDER", "auto").strip().lower()
 AZURE_DI_ENDPOINT = os.environ.get("AZURE_DI_ENDPOINT", "")
 AZURE_DI_KEY      = os.environ.get("AZURE_DI_KEY", "")
 
@@ -28,7 +29,7 @@ MODEL_CONFIGS = [
         "name": "QR Code Detector",
     },
     {
-        "path": "./models/danik&stamp.pt",
+        "path": "./models/danik.stamp.pt",
         "conf_threshold": 0.25,
         "name": "Signature Detector",
     },

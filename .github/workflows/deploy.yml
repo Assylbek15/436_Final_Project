@@ -77,7 +77,14 @@ jobs:
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/secret.yaml
+          kubectl create secret generic azure-secrets \
+            --namespace doc-inspector \
+            --from-literal=DETECTION_PROVIDER=yolo \
+            --from-literal=AZURE_DI_ENDPOINT="${{ secrets.AZURE_DI_ENDPOINT }}" \
+            --from-literal=AZURE_DI_KEY="${{ secrets.AZURE_DI_KEY }}" \
+            --from-literal=AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+            --from-literal=AZURE_STORAGE_CONTAINER="documents" \
+            --dry-run=client -o yaml | kubectl apply -f -
           kubectl apply -f k8s/backend-deployment.yaml
           kubectl apply -f k8s/frontend-deployment.yaml
           kubectl apply -f k8s/ingress.yaml

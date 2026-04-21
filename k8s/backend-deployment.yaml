@@ -4,7 +4,12 @@ metadata:
   name: backend
   namespace: doc-inspector
 spec:
-  replicas: 2
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: backend
@@ -16,6 +21,7 @@ spec:
       containers:
         - name: backend
           image: docinspectoracr.azurecr.io/backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           envFrom:

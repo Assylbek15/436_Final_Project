@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, Download, Copy, Check } from "lucide-react";
 import type { AnalyzeResponse } from "../types/types";
 import PageResultCard from "./PageResultCard";
+import { resolveAssetUrl } from "../utils/assetUrl";
 
 interface ResultsViewProps {
   result: AnalyzeResponse;
@@ -56,7 +57,7 @@ export default function ResultsView({ result, onReset }: ResultsViewProps) {
 
           {/* DOWNLOAD PDF BUTTON */}
           <a
-            href={`http://localhost:8000${result.annotated_pdf_url}`}
+            href={resolveAssetUrl(result.annotated_pdf_url)}
             download
             target="_blank"
             rel="noopener noreferrer"

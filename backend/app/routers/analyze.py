@@ -3,6 +3,7 @@ import uuid
 import zipfile
 import io
 from pathlib import Path
+from datetime import datetime
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
@@ -10,6 +11,7 @@ from PIL import Image
 
 from app.utils.pdf_tools import pdf_bytes_to_images, images_to_pdf
 from app.config import (
+    DETECTION_PROVIDER,
     AZURE_DI_ENDPOINT,
     AZURE_DI_KEY,
     AZURE_STORAGE_CONNECTION_STRING,
@@ -26,17 +28,33 @@ router = APIRouter()
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 # ---------------------------------------------------------------------------
-# Service selection — Azure DI if credentials present, YOLO otherwise
+# Service selection — explicit provider override, otherwise Azure DI if
+# credentials are present and provider is left on auto.
 # ---------------------------------------------------------------------------
-_USE_AZURE = bool(AZURE_DI_ENDPOINT and AZURE_DI_KEY)
+_HAS_AZURE_CREDS = bool(AZURE_DI_ENDPOINT and AZURE_DI_KEY)
+_USE_AZURE = (
+    DETECTION_PROVIDER == "azure"
+    or (DETECTION_PROVIDER == "auto" and _HAS_AZURE_CREDS)
+)
 _USE_BLOB  = bool(AZURE_STORAGE_CONNECTION_STRING)
+
+if DETECTION_PROVIDER == "azure" and not _HAS_AZURE_CREDS:
+    log.warning("DETECTION_PROVIDER=azure but Azure DI credentials are missing; falling back to YOLO")
+    _USE_AZURE = False
+
+if DETECTION_PROVIDER == "yolo":
+    log.info("DETECTION_PROVIDER=yolo — forcing YOLO models in the backend")
+elif DETECTION_PROVIDER == "azure":
+    log.info("DETECTION_PROVIDER=azure — forcing Azure Document Intelligence")
+else:
+    log.info("DETECTION_PROVIDER=auto")
 
 if _USE_AZURE:
     from app.services.azure_document_service import AzureDocumentService
     _azure = AzureDocumentService(AZURE_DI_ENDPOINT, AZURE_DI_KEY)
     log.info("Using Azure Document Intelligence")
 else:
-    log.info("Azure DI credentials not set — falling back to YOLO")
+    log.info("Using local YOLO models")
     import torch
     from app.services.document_inspector import DocumentInspector
     _device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -169,7 +187,9 @@ async def analyze(pdf_file: UploadFile = File(...)):
         )
 
     file_bytes = await pdf_file.read()
-    job_id     = uuid.uuid4().hex
+    timestamp  = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    stem       = Path(pdf_file.filename).stem
+    job_id     = f"{stem}_{timestamp}"
 
     try:
         if ext == ".pdf":
@@ -208,7 +228,9 @@ async def batch_analyze(zip_file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid ZIP file: {e}")
 
-    job_id      = uuid.uuid4().hex
+    timestamp   = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    stem        = Path(zip_file.filename).stem
+    job_id      = f"{stem}_{timestamp}"
     parent_json = {}
     files_done  = 0
     total       = 0

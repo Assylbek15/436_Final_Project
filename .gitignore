@@ -1,3 +1,5 @@
 .DS_Store
 frontend/node_modules/
 backend/__pycache__/
+backend/.env
+k8s/secret.yaml
