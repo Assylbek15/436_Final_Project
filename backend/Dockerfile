@@ -34,7 +34,7 @@ COPY app ./app
 COPY models ./models
 
 # Copy static folder
-COPY static ./static
+RUN mkdir -p ./static/annotated
 
 # Expose FastAPI
 EXPOSE 8000
