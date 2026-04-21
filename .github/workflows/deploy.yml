@@ -88,7 +88,6 @@ jobs:
           kubectl apply -f k8s/backend-deployment.yaml
           kubectl apply -f k8s/frontend-deployment.yaml
           kubectl apply -f k8s/ingress.yaml
-          kubectl apply -f k8s/hpa.yaml
 
       - name: Update image tags to current commit SHA
         run: |
@@ -98,11 +97,6 @@ jobs:
           kubectl set image deployment/frontend \
             frontend=${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }} \
             -n ${{ env.NAMESPACE }}
-
-      - name: Wait for rollout
-        run: |
-          kubectl rollout status deployment/backend -n ${{ env.NAMESPACE }} --timeout=120s
-          kubectl rollout status deployment/frontend -n ${{ env.NAMESPACE }} --timeout=120s
 
       - name: Show running pods
         run: kubectl get pods -n ${{ env.NAMESPACE }}
